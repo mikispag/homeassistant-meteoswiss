@@ -117,33 +117,21 @@ class MeteoSwissSensor(
 
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
-        dataId = SENSOR_TYPES[self._type][SENSOR_DATA_ID]
-        data: StateType | date | datetime | Decimal = None
-        if (
-            self._attr_station not in self._data["condition_by_station"]
-            or not self._data["condition_by_station"][self._attr_station]
-        ):
-            pass
-        else:
+        data_ids = SENSOR_TYPES[self._type][SENSOR_DATA_ID]
+        if isinstance(data_ids, str):
+            data_ids = (data_ids,)
+        st_data = self._data["condition_by_station"].get(self._attr_station) or {}
+        for data_id in data_ids:
             try:
-                data = self._data["condition_by_station"][self._attr_station][dataId]
-                if data is None:
-                    fallback_map = {
-                        "tre200s0": "ta1tows0",
-                        "ure200s0": "uretows0",
-                        "tde200s0": "tdetows0",
-                    }
-                    if dataId in fallback_map:
-                        data = self._data["condition_by_station"][self._attr_station].get(
-                            fallback_map[dataId]
-                        )
+                val = st_data.get(data_id)
+                if val is not None and val != "-":
+                    return val
             except Exception:
                 _LOGGER.warning(
                     "Real-time weather station returned bad data:\n%s",
                     pprint.pformat(self._data),
                 )
-                data = None
-        return data
+        return None
 
     @property
     def available(self) -> bool:

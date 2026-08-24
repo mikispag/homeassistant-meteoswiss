@@ -196,7 +196,7 @@ class SensorTypedef(TypedDict):
     unit: StrEnum | str
     icon: str
     device_class: SensorDeviceClass | None
-    msDataId: str
+    msDataId: str | tuple[str, ...]
 
 
 _temp_sensor: SensorTypedef = {
@@ -204,7 +204,7 @@ _temp_sensor: SensorTypedef = {
     SENSOR_TYPE_UNIT: UnitOfTemperature.CELSIUS,
     SENSOR_TYPE_ICON: "mdi:thermometer",
     SENSOR_TYPE_CLASS: SensorDeviceClass.TEMPERATURE,
-    SENSOR_DATA_ID: "tre200s0",
+    SENSOR_DATA_ID: ("tre200s0", "ta1tows0"),
 }
 _rain_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "10 minute rain",
@@ -232,42 +232,42 @@ _humidity_sensor: SensorTypedef = {
     SENSOR_TYPE_UNIT: UnitOfRatio.PERCENTAGE,
     SENSOR_TYPE_ICON: "mdi:water-percent",
     SENSOR_TYPE_CLASS: SensorDeviceClass.HUMIDITY,
-    SENSOR_DATA_ID: "ure200s0",
+    SENSOR_DATA_ID: ("ure200s0", "uretows0"),
 }
 _dew_point_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "dew point",
     SENSOR_TYPE_UNIT: UnitOfTemperature.CELSIUS,
     SENSOR_TYPE_ICON: "mdi:weather-fog",
     SENSOR_TYPE_CLASS: None,
-    SENSOR_DATA_ID: "tde200s0",
+    SENSOR_DATA_ID: ("tde200s0", "tdetows0"),
 }
 _wind_direction_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "wind direction",
     SENSOR_TYPE_UNIT: DEGREE,
     SENSOR_TYPE_ICON: "mdi:compass-rose",
     SENSOR_TYPE_CLASS: None,
-    SENSOR_DATA_ID: "dkl010z0",
+    SENSOR_DATA_ID: ("dkl010z0", "dv1towz0"),
 }
 _wind_speed_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "wind speed",
     SENSOR_TYPE_UNIT: UnitOfSpeed.KILOMETERS_PER_HOUR,
     SENSOR_TYPE_ICON: "mdi:weather-windy",
     SENSOR_TYPE_CLASS: None,
-    SENSOR_DATA_ID: "fu3010z0",
+    SENSOR_DATA_ID: ("fu3010z0", "fu3towz0"),
 }
 _wind_speed_max_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "wind speed max",
     SENSOR_TYPE_UNIT: UnitOfSpeed.KILOMETERS_PER_HOUR,
     SENSOR_TYPE_ICON: "mdi:weather-windy",
     SENSOR_TYPE_CLASS: None,
-    SENSOR_DATA_ID: "fu3010z1",
+    SENSOR_DATA_ID: ("fu3010z1", "fu3towz1"),
 }
 _pressure_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "pressure",
     SENSOR_TYPE_UNIT: UnitOfPressure.HPA,
     SENSOR_TYPE_ICON: "mdi:gauge",
     SENSOR_TYPE_CLASS: SensorDeviceClass.ATMOSPHERIC_PRESSURE,
-    SENSOR_DATA_ID: "prestas0",
+    SENSOR_DATA_ID: ("prestas0", "pp0qffs0", "pp0qnhs0"),
 }
 _pressure_qff_sensor: SensorTypedef = {
     SENSOR_TYPE_NAME: "pressure QFF",

@@ -61,39 +61,30 @@ async def async_setup_entry(
 
 
 def condition_name_to_first_value(
-    condition: None | list[CurrentCondition], name: str
+    condition: None | list[CurrentCondition], *names: str
 ) -> float | None:
     if not condition:
         # Real-time weather station provides no data.
         _LOGGER.debug("Current condition is empty for all stations: %s", condition)
         return None
-    for n, row in enumerate(condition):
-        try:
-            value = row[name]  # type:ignore[literal-required]
-        except Exception:
-            _LOGGER.exception(
-                "Current condition %s (%s) has no value for %s", n, row, name
-            )
-            continue
-        if value is None or value == "-":
-            _LOGGER.debug(
-                "Value %s of current condition %s (%s) is %s, so not available",
-                name,
-                n,
-                row,
-                value,
-            )
-            continue
-        try:
-            return float(value)
-        except Exception:
-            _LOGGER.exception(
-                "Error converting %s to float for condition in row %s (%s)",
-                value,
-                n,
-                row,
-            )
-            continue
+    for name in names:
+        for n, row in enumerate(condition):
+            try:
+                value = row[name]  # type:ignore[literal-required]
+            except Exception:
+                continue
+            if value is None or value == "-":
+                continue
+            try:
+                return float(value)
+            except Exception:
+                _LOGGER.exception(
+                    "Error converting %s to float for condition in row %s (%s)",
+                    value,
+                    n,
+                    row,
+                )
+                continue
     return None
 
 
@@ -162,12 +153,7 @@ class MeteoSwissWeather(
     @property
     def native_temperature(self) -> float | None:
         val = condition_name_to_first_value(
-            self._condition_for_all_stations, "tre200s0"
-        )
-        if val is not None:
-            return val
-        val = condition_name_to_first_value(
-            self._condition_for_all_stations, "ta1tows0"
+            self._condition_for_all_stations, "tre200s0", "ta1tows0"
         )
         if val is not None:
             return val
@@ -177,41 +163,26 @@ class MeteoSwissWeather(
 
     @property
     def native_pressure(self) -> float | None:
-        val = condition_name_to_first_value(
-            self._condition_for_all_stations, "prestas0"
-        )
-        if val is not None:
-            return val
-        val = condition_name_to_first_value(
-            self._condition_for_all_stations, "pp0qffs0"
-        )
-        if val is not None:
-            return val
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "pp0qnhs0"
+            self._condition_for_all_stations, "prestas0", "pp0qffs0", "pp0qnhs0"
         )
 
     @property
     def humidity(self) -> float | None:
-        val = condition_name_to_first_value(
-            self._condition_for_all_stations, "ure200s0"
-        )
-        if val is not None:
-            return val
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "uretows0"
+            self._condition_for_all_stations, "ure200s0", "uretows0"
         )
 
     @property
     def native_wind_speed(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "fu3010z0"
+            self._condition_for_all_stations, "fu3010z0", "fu3towz0"
         )
 
     @property
     def wind_bearing(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "dkl010z0"
+            self._condition_for_all_stations, "dkl010z0", "dv1towz0"
         )
 
     @property
