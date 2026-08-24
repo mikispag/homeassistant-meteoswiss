@@ -11,7 +11,7 @@
     "issue_tracker": "https://github.com/Rudd-O/homeassistant-meteoswiss/issues",
     "quality_scale": "silver",
     "requirements": [
-        "hamsclientfork>=0.2.20",
+        "https://github.com/mikispag/hamsclientfork/archive/dc65df97516a34ef8e41eb1c39719d3b67aa4e50.zip#hamsclientfork==0.2.21",
         "geopy>=2.0"
     ],
     "version": "1.4.0"
