@@ -127,6 +127,16 @@ class MeteoSwissSensor(
         else:
             try:
                 data = self._data["condition_by_station"][self._attr_station][dataId]
+                if data is None:
+                    fallback_map = {
+                        "tre200s0": "ta1tows0",
+                        "ure200s0": "uretows0",
+                        "tde200s0": "tdetows0",
+                    }
+                    if dataId in fallback_map:
+                        data = self._data["condition_by_station"][self._attr_station].get(
+                            fallback_map[dataId]
+                        )
             except Exception:
                 _LOGGER.warning(
                     "Real-time weather station returned bad data:\n%s",
@@ -138,22 +148,7 @@ class MeteoSwissSensor(
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        available = False
-        dataId = SENSOR_TYPES[self._type][SENSOR_DATA_ID]
-        if (
-            self._attr_station not in self._data["condition_by_station"]
-            or not self._data["condition_by_station"][self._attr_station]
-        ):
-            pass
-        else:
-            try:
-                available = (
-                    self._data["condition_by_station"][self._attr_station][dataId]
-                    is not None
-                )
-            except Exception:
-                available = False
-        return available
+        return self.native_value is not None
 
     @callback
     def _handle_coordinator_update(self) -> None:

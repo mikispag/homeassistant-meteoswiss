@@ -161,20 +161,45 @@ class MeteoSwissWeather(
 
     @property
     def native_temperature(self) -> float | None:
-        return condition_name_to_first_value(
+        val = condition_name_to_first_value(
             self._condition_for_all_stations, "tre200s0"
         )
+        if val is not None:
+            return val
+        val = condition_name_to_first_value(
+            self._condition_for_all_stations, "ta1tows0"
+        )
+        if val is not None:
+            return val
+        if self._forecastData and "currentWeather" in self._forecastData:
+            return self._forecastData["currentWeather"].get("temperature")
+        return None
 
     @property
     def native_pressure(self) -> float | None:
-        return condition_name_to_first_value(
+        val = condition_name_to_first_value(
             self._condition_for_all_stations, "prestas0"
+        )
+        if val is not None:
+            return val
+        val = condition_name_to_first_value(
+            self._condition_for_all_stations, "pp0qffs0"
+        )
+        if val is not None:
+            return val
+        return condition_name_to_first_value(
+            self._condition_for_all_stations, "pp0qnhs0"
         )
 
     @property
     def humidity(self) -> float | None:
-        return condition_name_to_first_value(
+        val = condition_name_to_first_value(
             self._condition_for_all_stations, "ure200s0"
+        )
+        if val is not None:
+            return val
+        return condition_name_to_first_value(
+            self._condition_for_all_stations, "uretows0"
         )
 
     @property
