@@ -61,30 +61,39 @@ async def async_setup_entry(
 
 
 def condition_name_to_first_value(
-    condition: None | list[CurrentCondition], *names: str
+    condition: None | list[CurrentCondition], name: str
 ) -> float | None:
     if not condition:
         # Real-time weather station provides no data.
         _LOGGER.debug("Current condition is empty for all stations: %s", condition)
         return None
-    for name in names:
-        for n, row in enumerate(condition):
-            try:
-                value = row[name]  # type:ignore[literal-required]
-            except Exception:
-                continue
-            if value is None or value == "-":
-                continue
-            try:
-                return float(value)
-            except Exception:
-                _LOGGER.exception(
-                    "Error converting %s to float for condition in row %s (%s)",
-                    value,
-                    n,
-                    row,
-                )
-                continue
+    for n, row in enumerate(condition):
+        try:
+            value = row[name]  # type:ignore[literal-required]
+        except Exception:
+            _LOGGER.exception(
+                "Current condition %s (%s) has no value for %s", n, row, name
+            )
+            continue
+        if value is None or value == "-":
+            _LOGGER.debug(
+                "Value %s of current condition %s (%s) is %s, so not available",
+                name,
+                n,
+                row,
+                value,
+            )
+            continue
+        try:
+            return float(value)
+        except Exception:
+            _LOGGER.exception(
+                "Error converting %s to float for condition in row %s (%s)",
+                value,
+                n,
+                row,
+            )
+            continue
     return None
 
 
@@ -152,37 +161,32 @@ class MeteoSwissWeather(
 
     @property
     def native_temperature(self) -> float | None:
-        val = condition_name_to_first_value(
-            self._condition_for_all_stations, "tre200s0", "ta1tows0"
+        return condition_name_to_first_value(
+            self._condition_for_all_stations, "tre200s0"
         )
-        if val is not None:
-            return val
-        if self._forecastData and "currentWeather" in self._forecastData:
-            return self._forecastData["currentWeather"].get("temperature")
-        return None
 
     @property
     def native_pressure(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "prestas0", "pp0qffs0", "pp0qnhs0"
+            self._condition_for_all_stations, "prestas0"
         )
 
     @property
     def humidity(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "ure200s0", "uretows0"
+            self._condition_for_all_stations, "ure200s0"
         )
 
     @property
     def native_wind_speed(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "fu3010z0", "fu3towz0"
+            self._condition_for_all_stations, "fu3010z0"
         )
 
     @property
     def wind_bearing(self) -> float | None:
         return condition_name_to_first_value(
-            self._condition_for_all_stations, "dkl010z0", "dv1towz0"
+            self._condition_for_all_stations, "dkl010z0"
         )
 
     @property
@@ -259,7 +263,16 @@ class MeteoSwissWeather(
         if not self._forecastData:
             return None
         fcdata_out: list[Forecast] = []
-        # Skip the first element - it's the forecast for the current day
+
+        daily_conditions: dict[str, str] = {}
+        for df in self._forecastData.get("regionForecast", []):
+            d_date = df.get("dayDate")
+            if d_date:
+                cond = str(CODE_TO_CONDITION_MAP.get(df.get("iconDay"), ("", None))[0]) or None
+                if cond:
+                    daily_conditions[d_date] = cond
+
+        # Skip past elements - start from current/upcoming hour
         now = datetime.datetime.now(datetime.timezone.utc)
         forecast_data = self._forecastData["regionHourlyForecast"]
         biggers = [f["time"] > now for f in forecast_data]
@@ -269,14 +282,26 @@ class MeteoSwissWeather(
             return fcdata_out
         try:
             for forecast in forecast_data[idx - 1 :]:
+                f_time = forecast["time"]
+                f_date_str = f_time.strftime("%Y-%m-%d")
+                precip = forecast.get("precipitationMax") or 0.0
+
+                if precip >= 2.0:
+                    cond = "pouring"
+                elif precip > 0.0:
+                    cond = "rainy"
+                else:
+                    cond = daily_conditions.get(f_date_str) or self.condition
+
                 data_out: Forecast = {
-                    ATTR_FORECAST_TIME: forecast["time"]
+                    ATTR_FORECAST_TIME: f_time
                     .isoformat("T")
                     .partition("+")[0]
                     + "Z",
                     ATTR_FORECAST_NATIVE_TEMP_LOW: forecast["temperatureMin"],
                     ATTR_FORECAST_NATIVE_TEMP: forecast["temperatureMax"],
-                    ATTR_FORECAST_NATIVE_PRECIPITATION: forecast["precipitationMax"],
+                    ATTR_FORECAST_CONDITION: cond,
+                    ATTR_FORECAST_NATIVE_PRECIPITATION: precip,
                 }
                 fcdata_out.append(data_out)
         except Exception as e:
